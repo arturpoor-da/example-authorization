@@ -1,0 +1,62 @@
+module Main where
+
+import Daml.Script
+
+type AssetId = ContractId Asset
+
+template Asset
+  with
+    issuer : Party
+    owner  : Party
+    name   : Text
+  where
+    ensure name /= ""
+    signatory issuer
+    observer owner
+
+    choice MkAssetCopy : AssetId
+      controller owner
+      do
+        m <- create Mediator with
+               assetIssuer = issuer
+               assetOwner = owner
+        -- fails because of missing authorization from issuer (alice)
+        -- adding assetIssuer to signatories allows MkAsset to succeed
+        exercise m (MkAsset this)
+        
+
+template Mediator
+  with
+    assetIssuer : Party
+    assetOwner : Party
+  where
+    signatory assetOwner --, asserIssuer
+
+    choice MkAsset : AssetId
+      with
+        asset : Asset
+      controller assetOwner
+      do
+        create asset
+
+setup : Script AssetId
+setup = script do
+-- user_setup_begin
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  aliceId <- validateUserId "alice"
+  bobId <- validateUserId "bob"
+  createUser (User aliceId (Some alice)) [CanActAs alice]
+  createUser (User bobId (Some bob)) [CanActAs bob]
+-- user_setup_end
+
+  bobTV <- submit alice do
+    createCmd Asset with
+      issuer = alice
+      owner = bob
+      name = "TV"
+
+  submit bob do
+    exerciseCmd bobTV MkAssetCopy
+
+
