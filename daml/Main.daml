@@ -23,14 +23,13 @@ template Asset
         -- fails because of missing authorization from issuer (alice)
         -- adding assetIssuer to signatories allows MkAsset to succeed
         exercise m (MkAsset this)
-        
 
 template Mediator
   with
     assetIssuer : Party
     assetOwner : Party
   where
-    signatory assetOwner --, asserIssuer
+    signatory assetOwner --, assetIssuer
 
     choice MkAsset : AssetId
       with
