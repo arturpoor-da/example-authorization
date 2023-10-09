@@ -21,7 +21,8 @@ template Asset
                assetIssuer = issuer
                assetOwner = owner
         -- fails because of missing authorization from issuer (alice)
-        -- adding assetIssuer to signatories allows MkAsset to succeed
+        -- a) adding assetIssuer to signatories allows MkAsset to succeed
+        -- b) adding assetIssuer to controllers of MkAsset allows MkAsset to succeed
         exercise m (MkAsset this)
 
 template Mediator
@@ -34,7 +35,8 @@ template Mediator
     choice MkAsset : AssetId
       with
         asset : Asset
-      controller assetOwner
+      controller assetOwner --, assetIssuer
+      -- controller assetIssuer
       do
         create asset
 
@@ -55,7 +57,7 @@ setup = script do
       owner = bob
       name = "TV"
 
-  submit bob do
+  submitMulti [bob, alice] [] do
     exerciseCmd bobTV MkAssetCopy
 
 
